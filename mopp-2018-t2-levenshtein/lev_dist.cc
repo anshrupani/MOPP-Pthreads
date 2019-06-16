@@ -1,14 +1,10 @@
-// A Dynamic Programming based C++ program to find minimum 
-// number operations to convert str1 to str2 
 #include<bits/stdc++.h> 
 #include <iostream>
 #include <sstream>
-#include <unistd.h>
 #include <assert.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <pthread.h>
-#include <mutex>          // std::mutex
 #include <sys/sysinfo.h>
 
 using namespace std; 
@@ -26,11 +22,8 @@ struct thread_work_t{
 };
 
 int **dp;
-
-
-//std::mutex mtx; 
-
-// Utility function to find the minimum of three numbers 
+int cpus;
+int editDist(string str1 , string str2 , int m ,int n);
 int minu(int a, int b) 
 { 
     return (a < b)? a: b;     
@@ -46,12 +39,32 @@ int min(int x, int y, int z)
     return minu(minu(x, y), z); 
 }
 
+int editDist(string str1 , string str2 , int m ,int n) 
+{ 
+	int a, b, c, minimum;
+    if (m == 0) {
+    return n; 
+    }
+    if (n == 0) {
+    return m; 
+    }
+    if (str1[m-1] == str2[n-1]) {
+    return editDist(str1, str2, m-1, n-1); 
+    }
+    a = editDist(str1, str2, m, n-1);
+    b = editDist(str1, str2, m-1, n);    
+    if ((dp[m-1][n-1] != 9999) && (dp[m-1][n-1] != -1) && ((str1.length() + str2.length()) != 0))
+    c = dp[m-1][n-1];
+    else
+    c = editDist(str1, str2, m-1, n-1);
+    
+    minimum = min (a, b, c);
+    
+    return 1 + minimum;
+} 
 
 void *doWork(void *thread_work_uncasted)
 {
-
-    int counter = 0;
-    //printf("Entering doWork");
     struct thread_work_t *thread_work = (struct thread_work_t*)thread_work_uncasted;
     int elementNumberStart = thread_work->elementNumberS;
     int elementNumberEnd = thread_work->elementNumberE;
@@ -61,142 +74,48 @@ void *doWork(void *thread_work_uncasted)
     std::string str1;
     std::string str2;
     str1 = thread_work->str1;
-    
     str2 = thread_work->str2;
-    //std::cout <<str1<<" "<<str2<<"\n";
-   // int **dp = thread_work->dp;
-    
-// j becomes element number
 if (elementNumberEnd == -999)
 {
-
-            //printf("Entering if in doWork");
             int checkrow = (minu((m+1), line)) - elementNumberStart - 1;
             
             int checkcol = start_col + elementNumberStart;
-            //dp[checkrow][checkcol] = checkcol;
-            //printf("checkrow and checkcol are %d and %d\n", checkrow, checkcol);
-            //pthread_mutex_lock(&lock); 
-            //mtx.lock();      
-            if (checkrow==0){
-            //printf("Going to accessed dp");
-            dp[checkrow][checkcol] = checkcol;
-            //printf("Accessed dp");
-            }
-            else if (checkcol==0){
-            //printf("Going to accessed dp");
-            dp[checkrow][checkcol] = checkrow;
-            //printf("Accessed dp");
-            }
             
-            else if (str1[checkrow-1] == str2[checkcol-1]){ 
-            //printf("Going to accessed dp");
-            dp[checkrow][checkcol] = dp[checkrow-1][checkcol-1];
-            //printf("Accessed dp");
-            }
-            
-            else {
-            //printf("Going to accessed dp");
-            dp[checkrow][checkcol] = 1 + min(dp[checkrow][checkcol-1],  // Insert 
-                               dp[checkrow-1][checkcol],  // Remove 
-                               dp[checkrow-1][checkcol-1]); // Replace
-            //printf("Accessed dp");
-            }
-            usleep(100000);
-            //for (int i = 0; i < 10; i++)
-           // {
-            //counter ++;
-           // }
-            //counter = 0;
-            //pthread_mutex_unlock(&lock);
-            //mtx.unlock();
-            //printf("Value from doWork %d\n", dp[checkrow][checkcol]);
-            //printf("%5d ", dp[minu(m+1, line)-elementNumberStart-1][start_col+elementNumberStart]);
-            //pthread_exit(NULL);
-            //pthread_detach(pthread_self());
+            int xx = editDist(str1, str2, checkrow, checkcol);
+            dp[checkrow][checkcol] = xx;
+      
 }
 else
 {
-//printf("Entering else in doWork");
 for (int j=elementNumberStart; j<elementNumberEnd; j++) 
         {
         
             int checkrow = (minu((m+1), line)) - j - 1;
             int checkcol = start_col + j;
-            //pthread_mutex_lock(&lock);         
-            //mtx.lock(); 
-            if (checkrow==0)
-            dp[checkrow][checkcol] = checkcol;
             
-            else if (checkcol==0)
-            dp[checkrow][checkcol] = checkrow;
-            
-            else if (str1[checkrow-1] == str2[checkcol-1]) 
-            dp[checkrow][checkcol] = dp[checkrow-1][checkcol-1];
-            
-            else
-            dp[checkrow][checkcol] = 1 + min(dp[checkrow][checkcol-1],  // Insert 
-                               dp[checkrow-1][checkcol],  // Remove 
-                               dp[checkrow-1][checkcol-1]); // Replace
-            //printf("Value from doWork %d\n", dp[checkrow][checkcol]);
-            //printf("%5d ", dp[minu(m+1, line)-j-1][start_col+j]); 
-            //pthread_exit(NULL);
-            usleep(100000);
+            int yy = editDist(str1, str2, checkrow, checkcol);
+            dp[checkrow][checkcol] = yy;
         }
         
-        //pthread_detach(pthread_self());
-       // for (int i = 0; i < 10; i++)
-         //   {
-         //   counter ++;
-          //  }
-          //  counter = 0;
-        //pthread_mutex_unlock(&lock);
-            //mtx.unlock();
 }
-//pthread_exit(NULL);
-
 }
 
 int editDistDP(string str1, string str2, int m, int n) 
 { 
 
-//    int dp[m+1][n+1];
-    //int** dp = new int*[n+1];
-    //for(int k = 0; k < n+1; ++k)
-    //dp[k] = new int[m+1];
-    // There will be ROW+COL-1 lines in the output 
-    int cpus = get_nprocs();
-    //cpus = 1;
-        // nprocs() might return wrong amount inside of a container.
-        // Use MAX_CPUS instead, if available.
-        if (getenv("MAX_CPUS")) {
-        cpus = atoi(getenv("MAX_CPUS"));
-        }
-    // Sanity-check
-        assert(cpus > 0 && cpus <= 64);
+    
     for (int line=1; line<(m + n + 2); line++) 
     { 
-        /* Get column index of the first element in this line of output. 
-           The index is 0 for first ROW lines and line - ROW for remaining 
-           lines  */
-        int start_col =  max(0, line-(m+1)); 
-  
-        /* Get count of elements in this line. The count of elements is 
-           equal to minimum of line number, COL-start_col and ROW */
+        int start_col =  max(0, line-(m+1));
         int count = min(line, ((n+1)-start_col), (m+1)); 
-        //printf("Value of count %d\n", count);
-       
-        //fprintf(stderr, "Running on %d CPUs\n", cpus);
         int num_threads = 0;
         if (count <= cpus)
         {
         num_threads = count;
         pthread_t thread[num_threads];
         struct thread_work_t tw[num_threads];
-        //printf("num_threads = %d\n", num_threads);
         for (int i=0; i < num_threads; i++) 
         {
-        //printf("if for loop 1 element number %d\n", i);
         tw[i].elementNumberS = i;
         tw[i].elementNumberE = -999;
         tw[i].lineN = line;
@@ -204,18 +123,11 @@ int editDistDP(string str1, string str2, int m, int n)
         tw[i].startcolumn = start_col;
         tw[i].str1 = str1;
         tw[i].str2 = str2;
-        //tw[i].dp;
-        //fprintf(stderr, "Starting thread %d from %d to %d\n", i, tw[i].elementNumberS, tw[i].lineN);
-        //printf("Data in struct: %d, %d, %d, %d, %d \n", tw[i].elementNumberS, tw[i].elementNumberE, tw[i].lineN, tw[i].mn, tw[i].startcolumn);
-        //elementNumberStart = i, elementNumberEnd = -999
         
         pthread_create(&thread[i], NULL, doWork, (void*)&tw[i]);
-        //printf("Came back in if loop 1");
-       // pthread_exit(NULL);
         }        
 
         for (int i=0; i<num_threads; i++) {
-        // wait for all threads
         pthread_join(thread[i], NULL);
         }
 
@@ -227,8 +139,7 @@ int editDistDP(string str1, string str2, int m, int n)
         struct thread_work_t tw[num_threads];
         for (int i=0; i < num_threads; i++) 
         {
-        //printf("if for loop 2 element number %d\n", i);
-        if (i != (num_threads - 1)) // elementNumberStart = i, elementNumberEnd = -999
+        if (i != (num_threads - 1))
         {
         tw[i].elementNumberS = i;
         tw[i].elementNumberE = -999;
@@ -237,12 +148,9 @@ int editDistDP(string str1, string str2, int m, int n)
         tw[i].startcolumn = start_col;
         tw[i].str1 = str1;
         tw[i].str2 = str2;
-        //fprintf(stderr, "Starting thread %d from %d to %d\n", i, tw[i].elementNumberS, tw[i].lineN);
-        //printf("Data in struct: %d, %d, %d, %d, %d \n", tw[i].elementNumberS, tw[i].elementNumberE, tw[i].lineN, tw[i].mn, tw[i].startcolumn);
         pthread_create(&thread[i], NULL, doWork, (void*)&tw[i]);
-        //pthread_exit(NULL);
         }
-        else //tell pthread that this last one needs to work for all remaining elements, elementNumberStart = i, elementNumberEnd = count-i
+        else
         {
         tw[i].elementNumberS = i;
         tw[i].elementNumberE = count;
@@ -251,74 +159,20 @@ int editDistDP(string str1, string str2, int m, int n)
         tw[i].startcolumn = start_col;
         tw[i].str1 = str1;
         tw[i].str2 = str2;
-        //fprintf(stderr, "Starting thread %d from %d to %d\n", i, tw[i].elementNumberS, tw[i].lineN);
-        //printf("Data in struct: %d, %d, %d, %d, %d \n", tw[i].elementNumberS, tw[i].elementNumberE, tw[i].lineN, tw[i].mn, tw[i].startcolumn);
         pthread_create(&thread[i], NULL, doWork, (void*)&tw[i]);
-        //pthread_exit(NULL);
         }
         }
         for (int i=0; i<num_threads; i++) {
-        // wait for all threads
         pthread_join(thread[i], NULL);
         } 
-        }
-  
-        /* Print elements of this line */
-         
-        /* Ptint elements of next diagonal on next line */
-        //printf("\n"); 
+        } 
     }
     
     return dp[m][n]; 
 } 
 
-/*  
-int editDistDP(string str1, string str2, int m, int n) 
-{ 
-    // Create a table to store results of subproblems 
-    int dp[m+1][n+1]; 
-  
-    // Fill d[][] in bottom up manner 
-    for (int i=0; i<=m; i++) 
-    { 
-        for (int j=0; j<=n; j++) 
-        { 
-            // If first string is empty, only option is to 
-            // insert all characters of second string 
-            if (i==0) 
-                dp[i][j] = j;  // Min. operations = j 
-  
-            // If second string is empty, only option is to 
-            // remove all characters of second string 
-            else if (j==0) 
-                dp[i][j] = i; // Min. operations = i 
-  
-            // If last characters are same, ignore last char 
-            // and recur for remaining string 
-            else if (str1[i-1] == str2[j-1]) 
-                dp[i][j] = dp[i-1][j-1]; 
-  
-            // If the last character is different, consider all 
-            // possibilities and find the minimum 
-            else
-                dp[i][j] = 1 + min(dp[i][j-1],  // Insert 
-                                   dp[i-1][j],  // Remove 
-                                   dp[i-1][j-1]); // Replace 
-        } 
-    } 
-  
-    return dp[m][n]; 
-} 
- */ 
 int main (int argc, char const* argv [])
 {
-
-   // if (pthread_mutex_init(&lock, NULL) != 0) 
-   // { 
-   //     printf("\n mutex init has failed\n"); 
-   //     return 1; 
-   // }    
-    
     std::string s ;
     std::string t ;
     std::getline (std::cin, s) ;
@@ -326,11 +180,26 @@ int main (int argc, char const* argv [])
     dp = new int*[s.length()+1];
     for(int i = 0; i < (s.length()+1); ++i)
     dp[i] = new int[t.length()];
+
+    for (int i = 0; i < s.length(); i++)
+    {
+    for (int j = 0; j < t.length(); j++)
+    dp[i][j] = -1;
+    }
+    
+    cpus = get_nprocs();
+        // nprocs() might return wrong amount inside of a container.
+        // Use MAX_CPUS instead, if available.
+        if (getenv("MAX_CPUS")) {
+        cpus = atoi(getenv("MAX_CPUS"));
+        }
+    // Sanity-check
+        assert(cpus > 0 && cpus <= 64);
+        //cpus = 1;
+
     std::cout
         << editDistDP(s, t, s.length(), t.length())
         << std::endl ;
-        
-    //pthread_mutex_destroy(&lock); 
     return 0;         
 }
 
