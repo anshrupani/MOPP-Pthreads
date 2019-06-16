@@ -53,11 +53,7 @@ int editDist(string str1 , string str2 , int m ,int n)
     }
     a = editDist(str1, str2, m, n-1);
     b = editDist(str1, str2, m-1, n);    
-    if ((dp[m-1][n-1] != 9999) && (dp[m-1][n-1] != -1) && ((str1.length() + str2.length()) != 0))
     c = dp[m-1][n-1];
-    else
-    c = editDist(str1, str2, m-1, n-1);
-    
     minimum = min (a, b, c);
     
     return 1 + minimum;
