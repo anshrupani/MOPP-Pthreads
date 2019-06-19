@@ -319,7 +319,7 @@ static void search (sudoku *s, cell_v **values, int tasks_d, int status) {
                 for (j = 0; j < s->dim; j++)
                     values_bkp[i][j] = values[i][j];
             int status_now = assign(s, values_bkp, minI, minJ, k);
-            if (tasks_d > 25) {
+            if (tasks_d > 10) {
                 thread_work_t* tw = (thread_work_t*) malloc(sizeof(thread_work_t));
                 tw->s = s;      
                 tw->values = values_bkp;
