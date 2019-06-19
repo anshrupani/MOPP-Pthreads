@@ -2,6 +2,9 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <limits.h>
+#include<pthread.h>
+#include <sys/sysinfo.h>
+#include "thpool.h"
 
 #define INT_TYPE unsigned long long 
 #define INT_TYPE_SIZE (sizeof(INT_TYPE) * 8)
@@ -30,32 +33,49 @@ typedef struct sudoku {
     int dim;
     int peers_size;
     int* grid;
-    
     cell_coord ****unit_list; //[r][c][0 - row, 1 - column, 2 - box],
     cell_coord ***peers;
     cell_v **values;
-    
-    unsigned long long sol_count;
 } sudoku;
 
-static int assign (sudoku *s, int i, int j, int d);
+typedef struct thread_work_t{
+    sudoku *s;
+    cell_v **values;
+    int t_d;
+    int status;
+} thread_work_t;
+
+threadpool thpool;
+int cpus;
+int solutions = 0; 
+pthread_mutex_t lock; 
+
+static int assign (sudoku *s, cell_v **values, int i, int j, int d);
+void freemem(sudoku *s, cell_v **values);
+void doWork(void *arg);
+void wait();
 
 static inline int cell_v_get(cell_v *v, int p) {
-    return !!((*v).v[(p - 1) / INT_TYPE_SIZE] & (((INT_TYPE)1) << ((p - 1) % INT_TYPE_SIZE))); //!! otherwise p > 32 breaks the return
+    //printf("%lld\n", (*v).v[p]);
+    return !!((*v).v[(p - 1) / INT_TYPE_SIZE] & (((INT_TYPE)1) << ((p - 1) % INT_TYPE_SIZE)));
 }
 
 static inline void cell_v_unset(cell_v *v, int p) {
+    //printf("%lld\n", (*v).v[p]);
     (*v).v[(p - 1) / INT_TYPE_SIZE] &= ~(((INT_TYPE)1) << ((p - 1) % INT_TYPE_SIZE));
 }
 
 static inline void cell_v_set(cell_v *v, int p) {
+    //printf("%lld\n", (*v).v[p]);
     (*v).v[(p - 1) / INT_TYPE_SIZE] |= ((INT_TYPE)1) << ((p -1) % INT_TYPE_SIZE);
 }
 
 static inline int cell_v_count(cell_v *v) {
     int acc = 0;
-    for (int i = 0; i < CELL_VAL_SIZE; i++) 
+    for (int i = 0; i < CELL_VAL_SIZE; i++) {
+       // printf("%lld\n", (*v).v[i]);
         acc += __builtin_popcountll((*v).v[i]);
+    }
     return acc;
 }
 
@@ -100,13 +120,13 @@ static void init(sudoku *s) {
         int ibase = i / s->bdim * s->bdim;
         for (j = 0; j < s->dim; j++) {
             for (pos = 0; pos < s->dim; pos++) {
-                s->unit_list[i][j][0][pos].r = i; //row 
+                s->unit_list[i][j][0][pos].r = i;
                 s->unit_list[i][j][0][pos].c = pos;
-                s->unit_list[i][j][1][pos].r = pos; //column
+                s->unit_list[i][j][1][pos].r = pos;
                 s->unit_list[i][j][1][pos].c = j;
             }
             int jbase = j / s->bdim * s->bdim;
-            for (pos = 0, k = 0; k < s->bdim; k++) //box
+            for (pos = 0, k = 0; k < s->bdim; k++)
                 for (l = 0; l < s->bdim; l++, pos++) {
                     s->unit_list[i][j][2][pos].r = ibase + k;
                     s->unit_list[i][j][2][pos].c = jbase + l;
@@ -118,15 +138,15 @@ static void init(sudoku *s) {
     for (i = 0; i < s->dim; i++)
         for (j = 0; j < s->dim; j++) {
             pos = 0;
-            for (k = 0; k < s->dim; k++) { //row
+            for (k = 0; k < s->dim; k++) {
                 if (s->unit_list[i][j][0][k].c != j)
                     s->peers[i][j][pos++] = s->unit_list[i][j][0][k]; 
             }
             for (k = 0; k < s->dim; k++) { 
-                cell_coord sq = s->unit_list[i][j][1][k]; //column
+                cell_coord sq = s->unit_list[i][j][1][k];
                 if (sq.r != i)
                     s->peers[i][j][pos++] = sq; 
-                sq = s->unit_list[i][j][2][k]; //box
+                sq = s->unit_list[i][j][2][k];
                 if (sq.r != i && sq.c != j)
                     s->peers[i][j][pos++] = sq; 
             }
@@ -149,7 +169,7 @@ static int parse_grid(sudoku *s) {
     
     for (i = 0; i < s->dim; i++)
         for (j = 0; j < s->dim; j++)
-            if (ld_vals[i][j] > 0 && !assign(s, i, j, ld_vals[i][j]))
+            if (ld_vals[i][j] > 0 && !assign(s, s->values, i, j, ld_vals[i][j]))
                 return 0;
 
     return 1;
@@ -164,8 +184,7 @@ static sudoku *create_sudoku(int bdim, int *grid) {
     r->dim = dim;
     r->peers_size = 3 * dim - 2 * bdim - 1;
     r->grid = grid;
-    r->sol_count = 0;
-    
+
     //[r][c][0 - row, 1 - column, 2 - box]//[r][c][0 - row, 1 - column, 2 - box][ix]
     r->unit_list = malloc(sizeof(cell_coord***) * dim);
     assert(r->unit_list);
@@ -199,7 +218,6 @@ static sudoku *create_sudoku(int bdim, int *grid) {
         r->values[i] = calloc(dim, sizeof(cell_v));
         assert(r->values[i]);
     }
-    
     init(r);
     if (!parse_grid(r)) {
         printf("Error parsing grid\n");
@@ -210,20 +228,19 @@ static sudoku *create_sudoku(int bdim, int *grid) {
     return r;
 }
 
-static int eliminate (sudoku *s, int i, int j, int d) {
+static int eliminate (sudoku *s, cell_v **values, int i, int j, int d) {
     int k, ii, cont, pos;
-    
-    if (!cell_v_get(&s->values[i][j], d)) 
+    if (!cell_v_get(&values[i][j], d)) 
         return 1;
 
-    cell_v_unset(&s->values[i][j], d);
+    cell_v_unset(&values[i][j], d);
 
-    int count = cell_v_count(&s->values[i][j]);
+    int count = cell_v_count(&values[i][j]);
     if (count == 0) {
         return 0;
     } else if (count == 1) {
-        for (k = 0; k < s->peers_size; k++)
-            if (!eliminate(s, s->peers[i][j][k].r, s->peers[i][j][k].c, digit_get(&s->values[i][j])))
+        for (k = 0; k < s->peers_size; k++) 
+            if (!eliminate(s, values, s->peers[i][j][k].r, s->peers[i][j][k].c, digit_get(&values[i][j])))
                 return 0;
     }
 
@@ -232,7 +249,7 @@ static int eliminate (sudoku *s, int i, int j, int d) {
         pos = 0;
         cell_coord* u = s->unit_list[i][j][k];
         for (ii = 0; ii < s->dim; ii++) {
-            if (cell_v_get(&s->values[u[ii].r][u[ii].c], d)) {
+            if (cell_v_get(&values[u[ii].r][u[ii].c], d)) {
                 cont++;
                 pos = ii;
             }
@@ -240,19 +257,112 @@ static int eliminate (sudoku *s, int i, int j, int d) {
         if (cont == 0)
             return 0;
         else if (cont == 1) {
-            if (!assign(s, u[pos].r, u[pos].c, d))
+            if (!assign(s, values, u[pos].r, u[pos].c, d))
                 return 0;
         }
     }
     return 1;
 }
 
-static int assign (sudoku *s, int i, int j, int d) {
+static int assign (sudoku *s, cell_v **values, int i, int j, int d) {
     for (int d2 = 1; d2 <= s->dim; d2++)
         if (d2 != d) 
-            if (!eliminate(s, i, j, d2))
+            if (!eliminate(s, values, i, j, d2))
                return 0;
     return 1;
+}
+
+static void search (sudoku *s, cell_v **values, int tasks_d, int status) {
+    int i, j, k;
+    tasks_d++;
+
+    if (!status) {
+        return;
+    }
+
+    int solved = 1;
+    for (i = 0; solved && i < s->dim; i++) 
+        for (j = 0; j < s->dim; j++) 
+            if (cell_v_count(&values[i][j]) != 1) {
+                solved = 0;
+                break;
+            }
+            
+    if (solved) {
+        pthread_mutex_lock(&lock);
+        solutions++;
+        pthread_mutex_unlock(&lock);
+        return;
+    }
+
+    //ok, there is still some work to be done
+    int min = INT_MAX;
+    int minI = -1;
+    int minJ = -1;
+
+    for (i = 0; i < s->dim; i++) 
+        for (j = 0; j < s->dim; j++) {
+            int used = cell_v_count(&values[i][j]);
+            if (used > 1 && used < min) {
+                min = used;
+                minI = i;
+                minJ = j;
+            }
+        }
+
+    for (k = 1; k <= s->dim; k++) {
+        if (cell_v_get(&values[minI][minJ], k))  {
+            cell_v **values_bkp = malloc (sizeof (cell_v *) * s->dim);
+            for (i = 0; i < s->dim; i++)
+                values_bkp[i] = malloc (sizeof (cell_v) * s->dim);
+            for (i = 0; i < s->dim; i++)
+                for (j = 0; j < s->dim; j++)
+                    values_bkp[i][j] = values[i][j];
+            int status_now = assign(s, values_bkp, minI, minJ, k);
+            if (tasks_d > 25) {
+                thread_work_t* tw = (thread_work_t*) malloc(sizeof(thread_work_t));
+                tw->s = s;      
+                tw->values = values_bkp;
+                tw->t_d = 0;
+                tw->status = status_now;
+                if (thpool_num_threads_working(thpool) < cpus) {
+                    thpool_add_work(thpool, &doWork, tw);
+                }
+                else {
+                    tasks_d = 0;
+                    search(s, values_bkp, tasks_d, status_now);
+                    freemem(s, values_bkp);
+                    
+                }
+            } else {
+                search(s, values_bkp, tasks_d, status_now);
+                freemem(s, values_bkp);
+            }
+        }
+    }
+}
+
+void freemem(sudoku *s, cell_v **values) {
+    for (int i = 0; i < s->dim; i++)
+        free(values[i]);
+    free (values);
+}
+
+void doWork(void *thread_work_uncasted) {
+    struct thread_work_t *thread_work = (struct thread_work_t*)thread_work_uncasted;
+    sudoku *s = thread_work->s;
+    cell_v **values =  thread_work->values;
+    int t_d = thread_work->t_d;
+    int status = thread_work->status;
+    search(s, values, t_d, status);
+    freemem(s, values);
+    free(thread_work);
+}
+
+void solve(sudoku *s) {
+    search(s, s->values, 100, 1);
+    thpool_wait(thpool);
+    return;
 }
 
 static void display(sudoku *s) {
@@ -260,72 +370,6 @@ static void display(sudoku *s) {
     for (int i = 0; i < s->dim; i++)
         for (int j = 0; j < s->dim; j++)
             printf("%d ",  digit_get(&s->values[i][j]));
-}
-
-static int search (sudoku *s, int status) {
-    int i, j, k;
-
-    if (!status) return status;
-
-    int solved = 1;
-    for (i = 0; solved && i < s->dim; i++) 
-        for (j = 0; j < s->dim; j++) 
-            if (cell_v_count(&s->values[i][j]) != 1) {
-                solved = 0;
-                break;
-            }
-    if (solved) {
-        s->sol_count++;
-        return SUDOKU_SOLVE_STRATEGY == SUDOKU_SOLVE;
-    }
-
-    //ok, there is still some work to be done
-    int min = INT_MAX;
-    int minI = -1;
-    int minJ = -1;
-    int ret = 0;
-    
-    cell_v **values_bkp = malloc (sizeof (cell_v *) * s->dim);
-    for (i = 0; i < s->dim; i++)
-        values_bkp[i] = malloc (sizeof (cell_v) * s->dim);
-    
-    for (i = 0; i < s->dim; i++) 
-        for (j = 0; j < s->dim; j++) {
-            int used = cell_v_count(&s->values[i][j]);
-            if (used > 1 && used < min) {
-                min = used;
-                minI = i;
-                minJ = j;
-            }
-        }
-            
-    for (k = 1; k <= s->dim; k++) {
-        if (cell_v_get(&s->values[minI][minJ], k))  {
-            for (i = 0; i < s->dim; i++)
-                for (j = 0; j < s->dim; j++)
-                    values_bkp[i][j] = s->values[i][j];
-            
-            if (search (s, assign(s, minI, minJ, k))) {
-                ret = 1;
-                goto FR_RT;
-            } else {
-                for (i = 0; i < s->dim; i++) 
-                    for (j = 0; j < s->dim; j++)
-                        s->values[i][j] = values_bkp[i][j];
-            }
-        }
-    }
-    
-    FR_RT:
-    for (i = 0; i < s->dim; i++)
-        free(values_bkp[i]);
-    free (values_bkp);
-    
-    return ret;
-}
-
-int solve(sudoku *s) {
-    return search(s, 1);
 }
 
 int main (int argc, char **argv) {
@@ -342,17 +386,33 @@ int main (int argc, char **argv) {
             exit(1);
         }
     }
+    if (pthread_mutex_init(&lock, NULL) != 0) 
+    { 
+        printf("\n mutex init has failed\n"); 
+        return 1; 
+    }
+    cpus = get_nprocs();
+        // npros() might return wrong amount inside of a container.
+        // Use MAX_CPUS instead, if available.
+        if (getenv("MAX_CPUS")) {
+        cpus = atoi(getenv("MAX_CPUS"));
+        }
+    // Sanity-check
+        assert(cpus > 0 && cpus <= 64);
+    //cpus = 1;
+    thpool = thpool_init(cpus);
 
     sudoku *s = create_sudoku(size, buf);
     if (s) {
+        //display(s);
         solve(s);
-        if (s->sol_count) {
+        if (solutions) {
             switch (SUDOKU_SOLVE_STRATEGY) {
                 case SUDOKU_SOLVE:
                     display(s);
                     break;
                 case SUDOKU_COUNT_SOLS: 
-                    printf("%lld\n", s->sol_count);
+                    printf("%d\n", solutions);
                     break;
                 default:
                     assert(0);
@@ -364,6 +424,8 @@ int main (int argc, char **argv) {
     } else {
         printf("Could not load puzzle.\n");
     }
-
+    pthread_mutex_destroy(&lock); 
+    thpool_destroy(thpool);
     return 0;
 }
+
