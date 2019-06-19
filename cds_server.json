@@ -1,7 +1,7 @@
 [
 ["echo","/bin/cat"],
 ["mopp-2018-t0-harmonic-progression-sum","/usr/bin/harmonic-progression-sum"],
-["mopp-2018-t2-levenshtein","/usr/bin/lev"],
+["mopp-2018-t2-levenshtein-large","/usr/bin/lev"],
 ["mopp-2016-t3-sudokount","/usr/bin/sudokount"]
 ]
 
