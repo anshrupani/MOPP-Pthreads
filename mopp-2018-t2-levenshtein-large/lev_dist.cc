@@ -198,8 +198,8 @@ int main (int argc, char const* argv [])
     // Sanity-check
         assert(cpus > 0 && cpus <= 64);
         //cpus = 2;
-        minim = minu(s.length(), t.length());
-        mini = minim/2;
+        minim = (s.length() + t.length())/cpus;
+        mini = minim/cpus;
         
     std::cout
         << editDistDP(s, t, s.length(), t.length())
