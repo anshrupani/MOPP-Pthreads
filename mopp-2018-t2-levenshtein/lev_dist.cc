@@ -40,6 +40,26 @@ int min(int x, int y, int z)
     return minu(minu(x, y), z); 
 }
 
+int editDist(string str1 , string str2 , int m ,int n) 
+{ 
+	int a, b, c, minimum;
+    if (m == 0) {
+    return n; 
+    }
+    if (n == 0) {
+    return m; 
+    }
+    if (str1[m-1] == str2[n-1]) {
+    return editDist(str1, str2, m-1, n-1); 
+    }
+    a = dp[m][n-1];
+    b = editDist(str1, str2, m-1, n);
+    c = editDist(str1, str2, m-1, n-1);    
+    minimum = min (a, b, c);
+    
+    return 1 + minimum;
+} 
+
 void *doWork(void *thread_work_uncasted)
 {
     struct thread_work_t *thread_work = (struct thread_work_t*)thread_work_uncasted;
@@ -178,7 +198,7 @@ int main (int argc, char const* argv [])
     // Sanity-check
         assert(cpus > 0 && cpus <= 64);
         //cpus = 2;
-        mini = cpus*20;
+        mini = 900;
         
     std::cout
         << editDistDP(s, t, s.length(), t.length())
