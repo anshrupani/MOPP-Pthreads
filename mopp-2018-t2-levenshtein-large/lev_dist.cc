@@ -18,7 +18,6 @@ struct thread_work_t{
     int startcolumn;
     std::string str1 ;
     std::string str2 ;
-
     
 };
 
@@ -40,6 +39,26 @@ int min(int x, int y, int z)
 { 
     return minu(minu(x, y), z); 
 }
+
+int editDist(string str1 , string str2 , int m ,int n) 
+{ 
+	int a, b, c, minimum;
+    if (m == 0) {
+    return n; 
+    }
+    if (n == 0) {
+    return m; 
+    }
+    if (str1[m-1] == str2[n-1]) {
+    return editDist(str1, str2, m-1, n-1); 
+    }
+    a = editDist(str1, str2, m, n-1);
+    b = editDist(str1, str2, m-1, n);    
+    c = dp[m-1][n-1];
+    minimum = min (a, b, c);
+    
+    return 1 + minimum;
+} 
 
 void *doWork(void *thread_work_uncasted)
 {
@@ -90,7 +109,7 @@ int editDistDP(string str1, string str2, int m, int n)
         //printf("line is %d %d\n", line, count);
         int num_threads = cpus, eStart = 0, eEnd = 0, work_pt = 0, tempS = 0, nt = 0, rem = 0;
         
-        if (count >= mini) {
+        if (count >= minim) {
         //printf("count more %d %d\n", count, num_threads);
         if (num_threads <= count) {
             if ((count / num_threads) >= mini) {
@@ -179,14 +198,8 @@ int main (int argc, char const* argv [])
     // Sanity-check
         assert(cpus > 0 && cpus <= 64);
         //cpus = 2;
-        mini = cpus*200;
-        if (cpus == 1)
-        mini = 1;
-        if (cpus == 2)
-        mini = 1000;
-        if (cpus = 4)
-        mini = 1000;
-       // mini = 1200; //minim/cpus;
+        minim = minu(s.length(), t.length());
+        mini = minim/2;
         
     std::cout
         << editDistDP(s, t, s.length(), t.length())

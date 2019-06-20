@@ -18,13 +18,12 @@ struct thread_work_t{
     int startcolumn;
     std::string str1 ;
     std::string str2 ;
-
     
 };
 
 int **dp;
 int cpus;
-int mini, minim;
+int mini;
 int editDist(string str1 , string str2 , int m ,int n);
 int minu(int a, int b) 
 { 
@@ -40,6 +39,26 @@ int min(int x, int y, int z)
 { 
     return minu(minu(x, y), z); 
 }
+
+int editDist(string str1 , string str2 , int m ,int n) 
+{ 
+	int a, b, c, minimum;
+    if (m == 0) {
+    return n; 
+    }
+    if (n == 0) {
+    return m; 
+    }
+    if (str1[m-1] == str2[n-1]) {
+    return editDist(str1, str2, m-1, n-1); 
+    }
+    a = editDist(str1, str2, m, n-1);
+    b = editDist(str1, str2, m-1, n);    
+    c = dp[m-1][n-1];
+    minimum = min (a, b, c);
+    
+    return 1 + minimum;
+} 
 
 void *doWork(void *thread_work_uncasted)
 {
@@ -58,21 +77,20 @@ for (int j=elementNumberStart; j<elementNumberEnd; j++)
         
             int checkrow = (minu((m+1), line)) - j - 1;
             int checkcol = start_col + j;
-            int local_val= 0;
+            
             if (checkrow==0)
-            local_val = checkcol;
+            dp[checkrow][checkcol] = checkcol;
             
             else if (checkcol==0)
-            local_val = checkrow;
+            dp[checkrow][checkcol] = checkrow;
             
             else if (str1[checkrow-1] == str2[checkcol-1]) 
-            local_val = dp[checkrow-1][checkcol-1];
+            dp[checkrow][checkcol] = dp[checkrow-1][checkcol-1];
             
             else
-            local_val = 1 + min(dp[checkrow][checkcol-1],  // Insert 
+            dp[checkrow][checkcol] = 1 + min(dp[checkrow][checkcol-1],  // Insert 
                                dp[checkrow-1][checkcol],  // Remove 
                                dp[checkrow-1][checkcol-1]); // Replace
-            dp[checkrow][checkcol] = local_val;
             //int yy = editDist(str1, str2, checkrow, checkcol);
             //dp[checkrow][checkcol] = yy;
         }
@@ -88,8 +106,8 @@ int editDistDP(string str1, string str2, int m, int n)
         int start_col =  max(0, line-(m+1));
         int count = min(line, ((n+1)-start_col), (m+1)); 
         //printf("line is %d %d\n", line, count);
-        int num_threads = cpus, eStart = 0, eEnd = 0, work_pt = 0, tempS = 0, nt = 0, rem = 0;
-        
+        int num_threads = cpus, eStart = 0, eEnd = 0, work_pt = 0, tempS = 0, tempE = 0, nt = 0, rem = 0;
+        //printf("%d\n", num_threads);
         if (count >= mini) {
         //printf("count more %d %d\n", count, num_threads);
         if (num_threads <= count) {
@@ -117,7 +135,7 @@ int editDistDP(string str1, string str2, int m, int n)
         
         if (i != (nt - 1)) {
         eStart = tempS;
-        eEnd = eStart + work_pt;
+        eEnd = tempE + work_pt;
         }
         else {
         eStart = eEnd;
@@ -131,6 +149,7 @@ int editDistDP(string str1, string str2, int m, int n)
         tw[i].str1 = str1;
         tw[i].str2 = str2;
         tempS = eEnd;
+        tempE = eStart;
         pthread_create(&thread[i], NULL, doWork, (void*)&tw[i]);        
         }
         for (int i=0; i < nt; i++) {
@@ -178,16 +197,8 @@ int main (int argc, char const* argv [])
         }
     // Sanity-check
         assert(cpus > 0 && cpus <= 64);
-        //cpus = 2;
-        mini = cpus*200;
-        if (cpus == 1)
-        mini = 1;
-        if (cpus == 2)
-        mini = 1000;
-        if (cpus = 4)
-        mini = 1000;
-       // mini = 1200; //minim/cpus;
-        
+        cpus = 2;
+        mini = cpus;
     std::cout
         << editDistDP(s, t, s.length(), t.length())
         << std::endl ;
