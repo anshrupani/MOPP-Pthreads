@@ -18,13 +18,12 @@ struct thread_work_t{
     int startcolumn;
     std::string str1 ;
     std::string str2 ;
-
     
 };
 
 int **dp;
 int cpus;
-int mini, minim;
+int mini;
 int editDist(string str1 , string str2 , int m ,int n);
 int minu(int a, int b) 
 { 
@@ -179,14 +178,7 @@ int main (int argc, char const* argv [])
     // Sanity-check
         assert(cpus > 0 && cpus <= 64);
         //cpus = 2;
-        mini = cpus*200;
-        if (cpus == 1)
-        mini = 1;
-        if (cpus == 2)
-        mini = 1000;
-        if (cpus = 4)
-        mini = 1000;
-       // mini = 1200; //minim/cpus;
+        mini = cpus*20;
         
     std::cout
         << editDistDP(s, t, s.length(), t.length())

@@ -8,5 +8,5 @@ clean :
 	rm -rf lev
 
 lev : lev_dist.cc
-	${CC} -g -O3 lev_dist.cc -pthread -o lev
+	${CC} -g -O3 lev_dist.cc -pthread -o levsmall
 
