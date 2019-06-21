@@ -54,6 +54,9 @@ int cpus;
 int solutions = 0; 
 pthread_mutex_t lock; 
 
+int minimum(int a, int b) {
+    return (a<b)? a: b;
+}
 
 static int assign (sudoku *s, cell_v **values, int i, int j, int d);
 void freemem(sudoku *s, cell_v **values);
@@ -362,7 +365,7 @@ static void search (sudoku *s, cell_v **values, int tasks_d, int status) {
                 for (j = 0; j < s->dim; j++)
                     values_bkp[i][j] = values[i][j];
             int status_now = assign(s, values_bkp, minI, minJ, k);
-            if (tasks_d > (CPUS_MAX_LIMIT - cpus)) {
+            if (tasks_d > (CPUS_MAX_LIMIT - minimum(4*cpus, 58))) {
                 thread_work_t* tw = (thread_work_t*) malloc(sizeof(thread_work_t));
                 tw->s = s;      
                 tw->values = values_bkp;
