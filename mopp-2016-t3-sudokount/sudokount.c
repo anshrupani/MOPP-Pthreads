@@ -454,4 +454,3 @@ int main (int argc, char **argv) {
     thpool_destroy(thpool);
     return 0;
 }
-
