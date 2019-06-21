@@ -9,6 +9,7 @@
 #define INT_TYPE unsigned long long 
 #define INT_TYPE_SIZE (sizeof(INT_TYPE) * 8)
 #define CELL_VAL_SIZE 1
+#define CPUS_MAX_LIMIT 64
 //MAX_BDIM = floor(sqrt(CELL_VAL_SIZE * INT_TYPE_SIZE)). Current value set for 64-bit INT_TYPE, adjust if needed
 #define MAX_BDIM 8
 #define BUILD_ERROR_IF(condition) ((void)sizeof(char[1 - 2*!!(condition)]))
@@ -170,7 +171,7 @@ void init_unit_list(void *thread_work_uncasted) {
                 s->unit_list[i][j][2][pos].r = ibase + k;
                 s->unit_list[i][j][2][pos].c = jbase + l;
             }
-
+    free(thread_work);
 }
 
 
@@ -192,7 +193,7 @@ void init_peers_list(void *thread_work_uncasted) {
                 if (sq.r != i && sq.c != j)
                     s->peers[i][j][pos++] = sq; 
             }
-
+    free(thread_work);
 }
 
 
@@ -361,7 +362,7 @@ static void search (sudoku *s, cell_v **values, int tasks_d, int status) {
                 for (j = 0; j < s->dim; j++)
                     values_bkp[i][j] = values[i][j];
             int status_now = assign(s, values_bkp, minI, minJ, k);
-            if (tasks_d > cpus) {
+            if (tasks_d > (CPUS_MAX_LIMIT - cpus)) {
                 thread_work_t* tw = (thread_work_t*) malloc(sizeof(thread_work_t));
                 tw->s = s;      
                 tw->values = values_bkp;
@@ -402,17 +403,10 @@ void doWork(void *thread_work_uncasted) {
 }
 
 void solve(sudoku *s) {
-    search(s, s->values, cpus+1, 1);
+    search(s, s->values, 100, 1);
     thpool_wait(thpool);
     return;
 }
-
-/*static void display(sudoku *s) {
-    printf("%d\n", s->bdim);
-    for (int i = 0; i < s->dim; i++)
-        for (int j = 0; j < s->dim; j++)
-            printf("%d ",  digit_get(&s->values[i][j]));
-}*/
 
 int main (int argc, char **argv) {
 
@@ -440,13 +434,12 @@ int main (int argc, char **argv) {
         cpus = atoi(getenv("MAX_CPUS"));
         }
     // Sanity-check
-        assert(cpus > 0 && cpus <= 64);
+        assert(cpus > 0 && cpus <= CPUS_MAX_LIMIT);
     //cpus = 1;
     thpool = thpool_init(cpus);
 
     sudoku *s = create_sudoku(size, buf);
     if (s) {
-        //display(s);
         solve(s);
         if (solutions) {
           printf("%d\n", solutions);
