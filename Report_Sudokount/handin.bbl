@@ -1,0 +1,13 @@
+\begin{thebibliography}{CNR12}
+
+\bibitem[CNR12]{chiu2012}
+Alton Chiu, Ehsan Nasiri, and Rafat Rashid.
+\newblock Parallelization of sudoku.
+\newblock {\em University of Toronto December}, 20, 2012.
+
+\bibitem[Nor]{norvig}
+Peter Norvig.
+\newblock Solving every sudoku puzzle.
+\newblock https://norvig.com/sudoku.html.
+
+\end{thebibliography}

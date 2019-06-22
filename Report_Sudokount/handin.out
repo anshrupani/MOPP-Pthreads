@@ -1,0 +1,11 @@
+\BOOKMARK [1][-]{section.1}{Problem Description}{}% 1
+\BOOKMARK [1][-]{section.2}{In Depth Analysis of the Unoptimized Algorithm}{}% 2
+\BOOKMARK [1][-]{section.3}{Complexity Analysis}{}% 3
+\BOOKMARK [1][-]{section.4}{Parallelization Strategies}{}% 4
+\BOOKMARK [2][-]{subsection.4.1}{Parallelizing the search Operation}{section.4}% 5
+\BOOKMARK [2][-]{subsection.4.2}{Parallelizing the init Operation}{section.4}% 6
+\BOOKMARK [2][-]{subsection.4.3}{Experimenting With Various Task Depths}{section.4}% 7
+\BOOKMARK [2][-]{subsection.4.4}{Experimenting With Golang}{section.4}% 8
+\BOOKMARK [1][-]{section.5}{Comparison and Evaluation}{}% 9
+\BOOKMARK [1][-]{section.6}{Speed Up Discussion and Analysis of Amdahl's Law}{}% 10
+\BOOKMARK [1][-]{section.7}{Appendix}{}% 11

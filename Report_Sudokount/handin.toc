@@ -1,0 +1,11 @@
+\contentsline {section}{\numberline {1}Problem Description}{3}{section.1}
+\contentsline {section}{\numberline {2}In Depth Analysis of the Unoptimized Algorithm}{3}{section.2}
+\contentsline {section}{\numberline {3}Complexity Analysis}{4}{section.3}
+\contentsline {section}{\numberline {4}Parallelization Strategies}{4}{section.4}
+\contentsline {subsection}{\numberline {4.1}Parallelizing the \textit {search} Operation}{4}{subsection.4.1}
+\contentsline {subsection}{\numberline {4.2}Parallelizing the \textit {init} Operation}{5}{subsection.4.2}
+\contentsline {subsection}{\numberline {4.3}Experimenting With Various Task Depths}{5}{subsection.4.3}
+\contentsline {subsection}{\numberline {4.4}Experimenting With Golang}{6}{subsection.4.4}
+\contentsline {section}{\numberline {5}Comparison and Evaluation}{6}{section.5}
+\contentsline {section}{\numberline {6}Speed Up Discussion and Analysis of Amdahl's Law}{7}{section.6}
+\contentsline {section}{\numberline {7}Appendix}{8}{section.7}

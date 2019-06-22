@@ -1,0 +1,12 @@
+Usage:
+
+- compile your paper into a PDF:
+	#> pdflatex handin.tex
+  if you changed a section title or added a section,
+  run the upper command twice
+- if you added a new citation to your tex file or you changed something
+  in refs.bib run: 
+	#> pdflatex handin.tex
+	#> bibtex handin
+	#> pdflatex handin.tex
+  

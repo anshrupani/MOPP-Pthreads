@@ -1,0 +1,12 @@
+\BOOKMARK [1][-]{section.1}{Problem Description}{}% 1
+\BOOKMARK [1][-]{section.2}{In Depth Analysis of the Unoptimized Algorithm}{}% 2
+\BOOKMARK [1][-]{section.3}{Complexity Analysis}{}% 3
+\BOOKMARK [1][-]{section.4}{Optimization}{}% 4
+\BOOKMARK [1][-]{section.5}{Parallelization Strategies}{}% 5
+\BOOKMARK [2][-]{subsection.5.1}{Introduction of Data Independency and Diagonal Matrix Iteration \(a.k.a. Most Optimized Strategy\)}{section.5}% 6
+\BOOKMARK [2][-]{subsection.5.2}{Assigning Atleast a Fixed Number of Elements to the Threads \(a.k.a. Large Strategy\)}{section.5}% 7
+\BOOKMARK [2][-]{subsection.5.3}{Assigning Recursive Tasks to Threads \(a.k.a. Scaled Strategy\)}{section.5}% 8
+\BOOKMARK [2][-]{subsection.5.4}{Using Threads For Each Individual Recursive Call in The Normal Recursive Code}{section.5}% 9
+\BOOKMARK [1][-]{section.6}{Comparison and Evaluation}{}% 10
+\BOOKMARK [1][-]{section.7}{Speed Up Discussion and Analysis of Amdahl's Law}{}% 11
+\BOOKMARK [1][-]{section.8}{Appendix}{}% 12

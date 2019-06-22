@@ -1,0 +1,12 @@
+\contentsline {section}{\numberline {1}Problem Description}{3}{section.1}
+\contentsline {section}{\numberline {2}In Depth Analysis of the Unoptimized Algorithm}{3}{section.2}
+\contentsline {section}{\numberline {3}Complexity Analysis}{3}{section.3}
+\contentsline {section}{\numberline {4}Optimization}{3}{section.4}
+\contentsline {section}{\numberline {5}Parallelization Strategies}{4}{section.5}
+\contentsline {subsection}{\numberline {5.1}Introduction of Data Independency and Diagonal Matrix Iteration (a.k.a. Most Optimized Strategy)}{4}{subsection.5.1}
+\contentsline {subsection}{\numberline {5.2}Assigning Atleast a Fixed Number of Elements to the Threads (a.k.a. Large Strategy)}{5}{subsection.5.2}
+\contentsline {subsection}{\numberline {5.3}Assigning Recursive Tasks to Threads (a.k.a. Scaled Strategy)}{5}{subsection.5.3}
+\contentsline {subsection}{\numberline {5.4}Using Threads For Each Individual Recursive Call in The Normal Recursive Code}{6}{subsection.5.4}
+\contentsline {section}{\numberline {6}Comparison and Evaluation}{6}{section.6}
+\contentsline {section}{\numberline {7}Speed Up Discussion and Analysis of Amdahl's Law}{7}{section.7}
+\contentsline {section}{\numberline {8}Appendix}{8}{section.8}
